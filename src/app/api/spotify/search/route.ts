@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { SpotifyApi, AccessToken } from "@spotify/web-api-ts-sdk";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 
 interface SpotifyToken {
   accessToken: string;
