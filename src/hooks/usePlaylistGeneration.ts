@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { SpotifyTrack } from "@/types/spotify";
+import { SpotifyTrack, GenerationResult, SpotifyTrackWithReason } from "@/types/spotify";
 import { useLocalStorage } from "./useLocalStorage";
 
 interface GenerationOptions {
@@ -18,26 +18,6 @@ interface GeneratedTrack {
 interface GeneratedPlaylist {
   playlistName: string;
   recommendations: GeneratedTrack[];
-}
-
-interface SpotifyTrackWithReason {
-  track: SpotifyTrack;
-  reason: string;
-}
-
-interface SpotifyPlaylist {
-  id: string;
-  name: string;
-  description: string;
-  external_urls: {
-    spotify: string;
-  };
-}
-
-interface GenerationResult {
-  playlist: SpotifyPlaylist;
-  tracks: SpotifyTrackWithReason[];
-  playlistName: string;
 }
 
 export function usePlaylistGeneration() {
@@ -209,6 +189,7 @@ export function usePlaylistGeneration() {
     isGenerating,
     error,
     generatedPlaylist,
+    setGeneratedPlaylist,
     resetGeneration,
     removeTrackFromGenerated,
     reorderTracks,

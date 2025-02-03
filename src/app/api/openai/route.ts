@@ -22,9 +22,12 @@ export async function POST(req: Request) {
       seedTracks: seedTracks.map((t: SpotifyTrack) => `${t.name} by ${t.artists[0].name}`),
     });
 
-    const systemPrompt = `You are a professional DJ and music curator. Your task is to create a playlist based on the given seed tracks and optional context. You must return the response in the exact JSON format specified, with a creative playlist name and recommendations array.`;
+    const systemPrompt = `You are a professional DJ and music curator with expertise in creating engaging and thematic playlists. Your task is to:
+1. Generate song recommendations based on seed tracks and context
+2. Create a compelling playlist name that captures the overall theme, mood, and musical journey of ALL tracks (both seed and recommended)
+3. Return the response in the exact JSON format specified`;
 
-    const userPrompt = `Based on these tracks:
+    const userPrompt = `Based on these seed tracks:
 ${seedTracks.map((track: SpotifyTrack) => `- "${track.name}" by ${track.artists[0].name}`).join("\n")}
 
 ${prompt ? `Additional context: ${prompt}` : ""}
@@ -40,7 +43,11 @@ For each song, provide:
 - Artist name
 - A brief (10 words max) explanation of why it fits
 
-Also, create a creative and engaging playlist name that reflects the mood and theme of the songs.
+After generating all recommendations, analyze both the seed tracks and recommended songs together to create an engaging playlist name that:
+1. Reflects the collective mood, era, genre, or theme
+2. Captures the musical journey or progression
+3. Is creative and memorable
+4. Feels cohesive with all tracks, not just the seed songs
 
 Your response must be a JSON object with exactly this structure:
 {

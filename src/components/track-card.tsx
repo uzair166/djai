@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { motion } from "framer-motion";
+import { formatDuration } from "@/lib/utils";
 
 interface TrackCardProps {
   track: SpotifyTrack;
@@ -13,6 +14,8 @@ interface TrackCardProps {
   onRemove?: () => void;
   dragHandle?: React.ReactNode;
   isDragging?: boolean;
+  variant?: "default" | "compact";
+  className?: string;
 }
 
 export function TrackCard({
@@ -23,9 +26,10 @@ export function TrackCard({
   onRemove,
   dragHandle,
   isDragging,
+  variant = "default",
+  className,
 }: TrackCardProps) {
-  // Format duration from ms to MM:SS
-  const duration = new Date(track.duration_ms).toISOString().slice(14, 19);
+  const isCompact = variant === "compact";
 
   return (
     <Card
@@ -35,7 +39,9 @@ export function TrackCard({
         selected && "bg-primary/5 hover:bg-primary/10",
         onClick && !selected && "cursor-pointer hover:-translate-y-[1px]",
         isDragging && "brightness-95 scale-[1.02] shadow-lg",
-        "backdrop-blur-sm"
+        "backdrop-blur-sm",
+        isCompact && "p-2",
+        className
       )}
       onClick={onClick && !selected ? onClick : undefined}
     >
@@ -46,7 +52,10 @@ export function TrackCard({
 
           {/* Album Art with Hover Effect */}
           <motion.div 
-            className="relative h-11 w-11 flex-shrink-0 rounded-md overflow-hidden"
+            className={cn(
+              "relative h-11 w-11 flex-shrink-0 rounded-md overflow-hidden",
+              isCompact && "h-8 w-8"
+            )}
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.2 }}
           >
@@ -68,35 +77,39 @@ export function TrackCard({
 
           {/* Track Info */}
           <div className="flex flex-col min-w-0 flex-1">
-            <div className="flex items-center gap-2 mb-0.5">
-              <p className="font-medium truncate text-sm tracking-tight">
-                {track.name}
-              </p>
-              {track.explicit && (
-                <span className="px-1 rounded text-[10px] bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 font-medium">
-                  E
-                </span>
-              )}
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <p className={cn(
+                    "font-medium truncate",
+                    isCompact && "text-sm"
+                  )}>
+                    {track.name}
+                  </p>
+                  {track.explicit && (
+                    <span className="px-1 rounded text-[10px] bg-neutral-200 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 font-medium">
+                      E
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className={cn(
+                    "text-muted-foreground truncate",
+                    isCompact && "text-xs"
+                  )}>
+                    {track.artists.map((a) => a.name).join(", ")}
+                  </span>
+                  <span className="text-muted-foreground/40">•</span>
+                  <span className={cn(
+                    "text-muted-foreground/60 tabular-nums",
+                    isCompact && "hidden"
+                  )}>
+                    {formatDuration(track.duration_ms)}
+                  </span>
+                </div>
+              </div>
+              
             </div>
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-muted-foreground truncate">
-                {track.artists.map((a) => a.name).join(", ")}
-              </span>
-              <span className="text-muted-foreground/40">•</span>
-              <span className="text-muted-foreground/60 tabular-nums">{duration}</span>
-            </div>
-            {reason && (
-              <motion.div 
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-1.5"
-              >
-                <span className="text-[11px] text-muted-foreground/80 bg-accent/40 px-2 py-0.5 rounded-full
-                  transition-colors group-hover/card:bg-accent/60">
-                  {reason}
-                </span>
-              </motion.div>
-            )}
           </div>
 
           {/* Actions */}
@@ -109,8 +122,10 @@ export function TrackCard({
                   e.stopPropagation();
                   onRemove();
                 }}
-                className="h-7 w-7 rounded-full opacity-0 group-hover/card:opacity-100 transition-all
-                  hover:bg-destructive/10 hover:text-destructive"
+                className={cn(
+                  "h-7 w-7 rounded-full opacity-0 group-hover/card:opacity-100 transition-all hover:bg-destructive/10 hover:text-destructive",
+                  isCompact && "scale-75"
+                )}
               >
                 <motion.svg
                   className="w-4 h-4"
@@ -131,8 +146,10 @@ export function TrackCard({
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="p-1.5 rounded-full opacity-60 hover:opacity-100 transition-all
-                hover:bg-[#1DB954]/10 hover:text-[#1DB954] active:scale-95"
+              className={cn(
+                "p-1.5 rounded-full opacity-60 hover:opacity-100 transition-all hover:bg-[#1DB954]/10 hover:text-[#1DB954] active:scale-95",
+                isCompact && "hidden"
+              )}
             >
               <motion.svg
                 className="w-4 h-4"
@@ -148,6 +165,38 @@ export function TrackCard({
             </a>
           </div>
         </div>
+
+        {reason && (
+              <motion.div 
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-2 min-w-0 max-w-full"
+              >
+                <div className="flex items-center gap-1.5 min-w-0 ml-12 mb-2">
+                  <svg
+                    className="w-3.5 h-3.5 text-violet-500/70 flex-shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                    />
+                  </svg>
+                  <span className={cn(
+                    "text-xs text-muted-foreground/90 bg-gradient-to-r from-violet-500/5 to-fuchsia-500/5 px-2 py-0.5 rounded-full border border-violet-500/10",
+                    "transition-colors group-hover/card:from-violet-500/10 group-hover/card:to-fuchsia-500/10",
+                    "truncate",
+                    isCompact && "text-[11px] px-1.5"
+                  )}>
+                    {reason}
+                  </span>
+                </div>
+              </motion.div>
+            )}
       </CardContent>
     </Card>
   );

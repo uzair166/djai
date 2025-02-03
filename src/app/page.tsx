@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { SpotifyTrack } from "@/types/spotify";
+import { SpotifyTrack, PlaylistHistoryItem } from "@/types/spotify";
 import { SearchInput } from "@/components/search-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,8 @@ import {
 } from "@dnd-kit/sortable";
 import { DraggableTrackCard } from "@/components/draggable-track-card";
 import { formatTotalDuration } from "@/lib/utils";
+import { usePlaylistHistory } from "@/hooks/usePlaylistHistory";
+import { PlaylistHistoryPanel } from "@/components/playlist-history-panel";
 
 export default function Home() {
   const [selectedTracks, setSelectedTracks] = useLocalStorage<SpotifyTrack[]>("selectedTracks", []);
@@ -33,8 +35,10 @@ export default function Home() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
-  const { generatePlaylist, isGenerating, error, generatedPlaylist, resetGeneration, removeTrackFromGenerated, reorderTracks } = usePlaylistGeneration();
+  const [showHistory, setShowHistory] = useState(false);
+  const { generatePlaylist, isGenerating, error, generatedPlaylist, setGeneratedPlaylist, resetGeneration, removeTrackFromGenerated, reorderTracks } = usePlaylistGeneration();
   const { isAuthenticated, login } = useSpotify();
+  const { history, addToHistory, removeFromHistory, clearHistory, restoreFromHistory } = usePlaylistHistory();
 
   const loadingMessages = [
     "Teaching AI to appreciate lo-fi beats...",
@@ -90,12 +94,15 @@ export default function Home() {
     setShowSuccess(false);
 
     try {
-      await generatePlaylist({
+      const result = await generatePlaylist({
         seedTracks: selectedTracks,
         prompt,
         numberOfTracks: parseInt(numberOfTracks),
         skipSave: true,
       });
+      
+      // Add to history after successful generation
+      addToHistory(selectedTracks, prompt, parseInt(numberOfTracks), result);
     } catch (err) {
       console.error("Generation error:", err);
     }
@@ -137,6 +144,27 @@ export default function Home() {
     resetGeneration();
   };
 
+  const handleRestoreFromHistory = (item: PlaylistHistoryItem) => {
+    const restored = restoreFromHistory(item);
+    setSelectedTracks(restored.seedTracks);
+    setPrompt(restored.prompt);
+    setNumberOfTracks(restored.numberOfTracks.toString());
+    if (restored.generatedPlaylist) {
+      resetGeneration();
+      setTimeout(() => {
+        setGeneratedPlaylist(() => {
+          if (!restored.generatedPlaylist) return null;
+          return {
+            playlist: restored.generatedPlaylist.playlist,
+            tracks: restored.generatedPlaylist.tracks,
+            playlistName: restored.generatedPlaylist.playlistName,
+          };
+        });
+      }, 0);
+    }
+    setShowHistory(false);
+  };
+
   if (!isAuthenticated) {
   return (
       <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-gradient-to-br from-violet-500/5 via-background to-fuchsia-500/5">
@@ -176,6 +204,42 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-violet-500/5 via-background to-fuchsia-500/5 relative">
+      {/* Add History Button in Header */}
+      <div className="absolute top-4 right-4 z-10">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowHistory(true)}
+          className="flex items-center gap-2"
+        >
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          History
+        </Button>
+      </div>
+
+      {/* History Panel */}
+      {showHistory && (
+        <PlaylistHistoryPanel
+          history={history}
+          onRestore={handleRestoreFromHistory}
+          onRemove={removeFromHistory}
+          onClear={clearHistory}
+          onClose={() => setShowHistory(false)}
+        />
+      )}
+
       {isGenerating && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="max-w-md w-full mx-4 text-center space-y-4">
@@ -208,7 +272,7 @@ export default function Home() {
         </div>
       )}
 
-      <div className="container mx-auto p-8">
+      <div className="container max-w-7xl mx-auto p-4 sm:p-8">
         <header className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
             <svg
@@ -259,8 +323,8 @@ export default function Home() {
           </div>
         </header>
 
-        <div className="grid gap-12 lg:grid-cols-2">
-          <div className="space-y-8">
+        <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
+          <div className="space-y-8 min-w-0">
             <section className="space-y-6">
               <div className="flex items-center gap-4">
                 <div className="flex items-center justify-center w-10 h-10 rounded-full bg-violet-500/10 text-violet-500 font-semibold">
@@ -407,7 +471,7 @@ export default function Home() {
             </section>
           </div>
 
-          <div className="space-y-8">
+          <div className="space-y-8 min-w-0">
             <section className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-semibold flex items-center gap-2">
@@ -454,7 +518,7 @@ export default function Home() {
 
             {generatedPlaylist && (
               <section className="space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-4">
                   <h2 className="text-2xl font-semibold">Generated Playlist</h2>
                   <Button
                     onClick={handleSaveToSpotify}
@@ -486,12 +550,12 @@ export default function Home() {
                     )}
                   </Button>
                 </div>
-                <Card>
+                <Card className="overflow-hidden">
                   <CardHeader className="bg-gradient-to-r from-violet-500/10 to-fuchsia-500/5">
                     <CardTitle>
                       <div className="flex flex-col gap-1">
-                        <span className="text-xl">{generatedPlaylist.playlistName}</span>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span className="text-xl break-words">{generatedPlaylist.playlistName}</span>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground flex-wrap">
                           <span>{generatedPlaylist.tracks.length} tracks</span>
                           <span>•</span>
                           <span>
@@ -524,7 +588,7 @@ export default function Home() {
                       )}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="p-6">
+                  <CardContent className="p-4 sm:p-6">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4 bg-accent/50 p-3 rounded-lg">
                       <svg
                         className="w-4 h-4 flex-shrink-0"
@@ -581,7 +645,7 @@ export default function Home() {
             )}
           </div>
         </div>
-    </div>
+      </div>
     </main>
   );
 }

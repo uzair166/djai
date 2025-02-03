@@ -37,4 +37,24 @@ export interface SpotifyPlaylist {
       track: SpotifyTrack;
     }[];
   };
+}
+
+export interface SpotifyTrackWithReason {
+  track: SpotifyTrack;
+  reason: string;
+}
+
+export interface PlaylistHistoryItem {
+  id: string;
+  timestamp: number;
+  seedTracks: SpotifyTrack[];
+  prompt: string;
+  numberOfTracks: number;
+  generatedPlaylist: GenerationResult | null;
+}
+
+export interface GenerationResult {
+  playlist?: SpotifyPlaylist;
+  tracks: SpotifyTrackWithReason[];
+  playlistName: string;
 } 
