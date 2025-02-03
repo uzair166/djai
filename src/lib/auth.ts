@@ -22,6 +22,35 @@ export const authOptions: AuthOptions = {
           show_dialog: true,
         },
       },
+      profile(profile) {
+        return {
+          id: profile.id,
+          name: profile.display_name,
+          email: profile.email,
+          image: profile.images?.[0]?.url,
+        };
+      },
+      userinfo: {
+        url: "https://api.spotify.com/v1/me",
+        async request({ tokens }) {
+          const { access_token } = tokens;
+          if (!access_token) throw new Error("No access token");
+          
+          const response = await fetch("https://api.spotify.com/v1/me", {
+            headers: {
+              Authorization: `Bearer ${access_token}`,
+              "Content-Type": "application/json",
+            },
+          });
+
+          if (!response.ok) {
+            console.error("[Auth Debug] Userinfo failed:", await response.text());
+            throw new Error("Failed to fetch user info");
+          }
+
+          return await response.json();
+        },
+      },
     }),
   ],
   callbacks: {
