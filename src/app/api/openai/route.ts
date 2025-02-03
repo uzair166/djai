@@ -4,6 +4,8 @@ import { SpotifyTrack } from "@/types/spotify";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  timeout: 59 * 1000, // 59 seconds in milliseconds
+  maxRetries: 3,
 });
 
 export async function POST(req: Request) {
