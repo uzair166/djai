@@ -11,6 +11,12 @@ const scopes = [
   "user-read-private",
 ].join(" ");
 
+// Get the base URL for the environment
+const getBaseUrl = () => {
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return process.env.NEXTAUTH_URL || "http://localhost:3000";
+};
+
 export const authOptions: AuthOptions = {
   providers: [
     SpotifyProvider({
@@ -30,9 +36,8 @@ export const authOptions: AuthOptions = {
       if (account) {
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
-        token.expiresAt = account.expires_at! * 1000; // Convert to milliseconds
+        token.expiresAt = account.expires_at! * 1000;
       }
-      // Check if token has expired
       if (token.expiresAt && Date.now() > token.expiresAt) {
         try {
           const response = await fetch("https://accounts.spotify.com/api/token", {
@@ -50,7 +55,6 @@ export const authOptions: AuthOptions = {
           });
 
           const tokens = await response.json();
-
           if (!response.ok) throw tokens;
 
           return {
@@ -74,11 +78,14 @@ export const authOptions: AuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Allows relative callback URLs
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
-      // Allows callback URLs on the same origin
-      else if (new URL(url).origin === baseUrl) return url;
-      return baseUrl;
+      // Always use the production URL for redirects in production
+      const productionBaseUrl = "https://spotifydjai.vercel.app";
+      // const finalBaseUrl = process.env.VERCEL_URL ? productionBaseUrl : baseUrl;
+      const finalBaseUrl = productionBaseUrl;
+
+      if (url.startsWith("/")) return `${finalBaseUrl}${url}`;
+      else if (new URL(url).origin === finalBaseUrl) return url;
+      return finalBaseUrl;
     },
   },
   pages: {
@@ -87,10 +94,17 @@ export const authOptions: AuthOptions = {
   },
   debug: process.env.NODE_ENV === "development",
   secret: process.env.NEXTAUTH_SECRET,
-  // Use production URL in Vercel environment
-  ...(process.env.VERCEL_URL
-    ? {
-        url: `https://${process.env.VERCEL_URL}`,
-      }
-    : {}),
+  // Always use HTTPS in production
+  useSecureCookies: process.env.VERCEL_URL ? true : false,
+  cookies: {
+    sessionToken: {
+      name: process.env.VERCEL_URL ? "__Secure-next-auth.session-token" : "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.VERCEL_URL ? true : false,
+      },
+    },
+  },
 }; 
