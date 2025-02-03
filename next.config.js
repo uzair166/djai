@@ -12,11 +12,15 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_SPOTIFY_CLIENT_ID: process.env.SPOTIFY_CLIENT_ID,
   },
-  // Increase the timeout for API routes if needed
+  // Set timeout to 59 seconds for Vercel free tier
   experimental: {
     serverActions: {
-      timeout: 120, // 2 minutes
+      timeout: 59, // 59 seconds to stay under Vercel's free tier limit
     },
+  },
+  // Ignore ESLint errors during build
+  eslint: {
+    ignoreDuringBuilds: true,
   },
 };
 

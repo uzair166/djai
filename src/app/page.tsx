@@ -134,7 +134,7 @@ export default function Home() {
               />
             </svg>
             <h1 className="text-6xl font-bold bg-gradient-to-r from-violet-500 to-fuchsia-500 bg-clip-text text-transparent">
-              djai
+              dJai
             </h1>
           </div>
           <p className="text-xl text-muted-foreground">
