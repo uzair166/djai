@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { SpotifyTrack } from "@/types/spotify";
 
+// Route segment configuration
+export const runtime = 'nodejs';
+export const maxDuration = 59;
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   timeout: 59 * 1000, // 59 seconds in milliseconds
