@@ -11,6 +11,16 @@ export function formatDuration(ms: number): string {
   return `${minutes}:${Number(seconds) < 10 ? "0" : ""}${seconds}`;
 }
 
+export function formatTotalDuration(ms: number): string {
+  const hours = Math.floor(ms / 3600000);
+  const minutes = Math.floor((ms % 3600000) / 60000);
+  
+  if (hours > 0) {
+    return `${hours} hr ${minutes} min`;
+  }
+  return `${minutes} min`;
+}
+
 export function truncate(str: string, length: number): string {
   if (str.length <= length) return str;
   return str.slice(0, length) + "...";

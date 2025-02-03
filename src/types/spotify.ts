@@ -19,6 +19,7 @@ export interface SpotifyTrack {
   };
   duration_ms: number;
   uri: string;
+  explicit: boolean;
 }
 
 export interface SpotifyPlaylist {

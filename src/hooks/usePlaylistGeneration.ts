@@ -50,6 +50,28 @@ export function usePlaylistGeneration() {
     setError(null);
   };
 
+  const removeTrackFromGenerated = (trackId: string) => {
+    if (!generatedPlaylist) return;
+    
+    setGeneratedPlaylist({
+      ...generatedPlaylist,
+      tracks: generatedPlaylist.tracks.filter(({ track }) => track.id !== trackId),
+    });
+  };
+
+  const reorderTracks = (oldIndex: number, newIndex: number) => {
+    if (!generatedPlaylist) return;
+
+    const tracks = [...generatedPlaylist.tracks];
+    const [removed] = tracks.splice(oldIndex, 1);
+    tracks.splice(newIndex, 0, removed);
+
+    setGeneratedPlaylist({
+      ...generatedPlaylist,
+      tracks,
+    });
+  };
+
   const generatePlaylist = async ({
     seedTracks,
     prompt,
@@ -188,5 +210,7 @@ export function usePlaylistGeneration() {
     error,
     generatedPlaylist,
     resetGeneration,
+    removeTrackFromGenerated,
+    reorderTracks,
   };
 } 
